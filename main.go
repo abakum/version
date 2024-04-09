@@ -1,6 +1,3 @@
-//go:build windows
-// +build windows
-
 // Add `//go:generate version` to `main.go` so that changes in the `VERSION` file or in the 'winres' directory affect the result of 'go build'.
 // Добавь `//go:generate version` в `main.go` чтоб изменения в файле `VERSION` или в каталоге `winres` учитывались при `go build`.
 package main
@@ -13,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	version "github.com/abakum/version/lib"
@@ -67,6 +65,10 @@ func main() {
 		)
 		data, err = cmd.Output()
 		log.Println(cmd.Args, err, string(data))
+	}
+
+	if runtime.GOOS != "windows" {
+		return
 	}
 
 	winres := filepath.Join(wd, "winres")
