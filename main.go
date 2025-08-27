@@ -1,7 +1,7 @@
-// Add `//go:generate version` or `//go:generate github.com/abakum/version` to `main.go` so that changes in the `VERSION` file
+// Add `//go:generate go run github.com/abakum/version` to `main.go` so that changes in the `VERSION` file
 // and for `Windows` in the 'winres' directory affect the result of 'go build'. After the changes and before `go build`, run `go generate`.
 
-// Добавь `//go:generate version` или `//go:generate github.com/abakum/version` в `main.go` чтоб изменения в файле `VERSION`
+// Добавь `//go:generate go run github.com/abakum/version` в `main.go` чтоб изменения в файле `VERSION`
 // а для `Windows` и в каталоге `winres` учитывались при `go build`. После изменений и перед `go build` запускай `go generate`.
 package main
 
@@ -19,7 +19,7 @@ import (
 	version "github.com/abakum/version/lib"
 )
 
-//go:generate go run .
+//go:generate go run github.com/abakum/version
 
 //go:embed VERSION
 var VERSION string
@@ -47,27 +47,28 @@ func main() {
 		if err != nil || bytes.Count(data, []byte(".")) != 2 {
 			log.Fatalln(err)
 		}
+		s := strings.TrimSpace(string(data))
+		s = strings.TrimPrefix(s, "v")
+		s = strings.TrimSuffix(s, "-lw")
 		// set /p VERSION=<VERSION
 		// git tag v%VERSION%-lw
 		cmd := exec.Command("git",
 			"tag",
-			fmt.Sprintf("v%s-lw", strings.TrimSpace(string(data))),
+			fmt.Sprintf("v%s-lw", s),
 		)
 
 		data, err = cmd.Output()
 		log.Println(cmd.Args, err, string(data))
-		if err != nil {
-			return
+		if err == nil {
+			// git push origin --tags
+			cmd = exec.Command("git",
+				"push",
+				"origin",
+				"--tags",
+			)
+			data, err = cmd.Output()
+			log.Println(cmd.Args, err, string(data))
 		}
-
-		// git push origin --tags
-		cmd = exec.Command("git",
-			"push",
-			"origin",
-			"--tags",
-		)
-		data, err = cmd.Output()
-		log.Println(cmd.Args, err, string(data))
 	}
 
 	if runtime.GOOS != "windows" {
@@ -91,6 +92,8 @@ func main() {
 		"git-tag",
 		"--file-version",
 		"git-tag",
+		"--arch",
+		"amd64,386",
 	)
 	data, err := cmd.Output()
 	log.Println(cmd.Args, err, string(data))
