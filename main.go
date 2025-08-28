@@ -38,11 +38,11 @@ func main() {
 	}
 	ver = filepath.Join(wd, ver)
 	// attrib -a VERSION
-	todo, err := version.IsA(ver, true)
+	newVersion, err := version.IsA(ver, true)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	if todo {
+	if newVersion {
 		data, err := os.ReadFile(ver)
 		if err != nil || bytes.Count(data, []byte(".")) != 2 {
 			log.Fatalln(err)
@@ -60,14 +60,18 @@ func main() {
 		data, err = cmd.Output()
 		log.Println(cmd.Args, err, string(data))
 		if err == nil {
-			// git push origin --tags
-			cmd = exec.Command("git",
-				"push",
-				"origin",
-				"--tags",
-			)
-			data, err = cmd.Output()
-			log.Println(cmd.Args, err, string(data))
+			defer func() {
+				// git push origin --tags
+				cmd = exec.Command("git",
+					"push",
+					"origin",
+					"--tags",
+				)
+				data, err = cmd.Output()
+				log.Println(cmd.Args, err, string(data))
+			}()
+		} else {
+			newVersion = false
 		}
 	}
 
@@ -77,15 +81,15 @@ func main() {
 
 	winres := filepath.Join(wd, "winres")
 	// attrib -a winres\*
-	todo, err = version.IsA(winres, true)
-	if err != nil || !todo {
+	newWinres, err := version.IsA(winres, true)
+	if err != nil || !(newWinres || newVersion) {
 		return
 	}
 
 	// https://github.com/tc-hib/go-winres
 	// go install github.com/tc-hib/go-winres@latest
 	// go-winres init
-	// go-winres make --product-version=git-tag --file-version=git-tag
+	// go-winres make --product-version=git-tag --file-version=git-tag --arch=amd64,386
 	cmd := exec.Command("go-winres",
 		"make",
 		"--product-version",
