@@ -13,7 +13,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	version "github.com/abakum/version/lib"
@@ -73,10 +72,6 @@ func main() {
 		} else {
 			newVersion = false
 		}
-	}
-
-	if runtime.GOOS != "windows" {
-		return
 	}
 
 	winres := filepath.Join(wd, "winres")
